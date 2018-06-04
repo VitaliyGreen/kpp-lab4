@@ -1,7 +1,9 @@
 import React, { Component } from "react";
 import "./App.css";
+
 import Button from '@material-ui/core/Button';
 import Input from '@material-ui/core/Input';
+import List from '@material-ui/core/List';
 
 
 const PLACES = [
@@ -12,14 +14,31 @@ const PLACES = [
 ];
 
 class WeatherDisplay extends Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       weatherData: null,
+      activePlace : props.activePlace
     };
   }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.activePlace !== nextProps.activePlace) {
+      this.setState(() => ({
+        activePlace: nextProps.activePlace,
+        weatherData: null
+      }), () => {
+      this.loadPlace()
+      });
+    }
+  }
+
   componentDidMount() {
-    const place = this.props.activePlace
+    this.loadPlace();
+  }
+
+  loadPlace() {
+    const place = this.state.activePlace
     const URL = `https://api.openweathermap.org/data/2.5/weather?q=${place}&appid=1b5ee5a1a74d624a74750350327ea372`;
     fetch(URL)
     .then(res => res.json())
@@ -27,9 +46,11 @@ class WeatherDisplay extends Component {
       this.setState({ weatherData: json });
     });
   }
+
   render() {
     const weatherData = this.state.weatherData;
     if (!weatherData) return <div>Loading</div>;
+    if (typeof(weatherData.weather) == "undefined") return <div>Loading</div>;
     const weather = weatherData.weather[0];
     const iconUrl = `http://openweathermap.org/img/w/${weather.icon}.png`;
 
@@ -52,11 +73,11 @@ class App extends Component {
   constructor() {
     super();
     this.state = {
-      activePlace: ``
+      activePlace: ``,
+      showWeather: false
     };
     this.handleChange = this.handleChange.bind(this);
     this.handleClick = this.handleClick.bind(this);
-    this.forceUpdateHandler = this.forceUpdateHandler.bind(this);
   }
 
     handleChange(event) {
@@ -67,9 +88,6 @@ class App extends Component {
        this.setState(() => ({ showWeather: true }));
     }
 
-    forceUpdateHandler() {
-      this.forceUpdate();
-    }
 
   render() {
     return (
@@ -100,7 +118,6 @@ class App extends Component {
           </Button>
           </div>
           {this.state.showWeather && <WeatherDisplay activePlace={this.state.activePlace} />}
-          {this.forceUpdateHandler}
         </div>
     );
   }
